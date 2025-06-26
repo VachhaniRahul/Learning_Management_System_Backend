@@ -31,7 +31,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['llearning-management-system-backend-7l2g.onrender.com']
+ALLOWED_HOSTS = ['learning-management-system-backend-7l2g.onrender.com']
 
 
 # Application definition
