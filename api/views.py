@@ -212,6 +212,22 @@ class CartAPIView(generics.CreateAPIView):
         }, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
 
 
+class LSMDetails(APIView):
+    def get(self, request):
+        course_count = models.Course.objects.all().count()
+        enrolled_count = models.EnrolledCourse.objects.all().count()
+        teacher_count = models.Teacher.objects.all().count()
+        lectures_count = models.VariantItem.objects.all().count()
+
+        data = {
+            'course_count':course_count,
+            'enrolled_count':enrolled_count,
+            'teacher_count':teacher_count,
+            'lecture_count':lectures_count
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+
 
 class CartListAPIView(generics.ListAPIView):
     serializer_class = serializers.CartSerializer
@@ -1289,6 +1305,7 @@ class CourseCreateAPIView(generics.CreateAPIView):
         language = request.data.get('language')
         price = request.data.get('price')
         category = request.data.get('category')
+        teacher_status = request.data.get('teacher_status')
 
         print(request.FILES)
 
@@ -1309,6 +1326,8 @@ class CourseCreateAPIView(generics.CreateAPIView):
             return Response({'message': 'level is required'}, status=status.HTTP_400_BAD_REQUEST)
         if not language:
             return Response({'message': 'language is required'}, status=status.HTTP_400_BAD_REQUEST)
+        if not teacher_status:
+            return Response({'message': 'teacher_status is required'}, status=status.HTTP_400_BAD_REQUEST)
         
 
         teacher = models.Teacher.objects.filter(id=teacher_id).first()
@@ -1328,29 +1347,131 @@ class CourseCreateAPIView(generics.CreateAPIView):
             language=language,
             file=file,
             image=image,
-            description=description
+            description=description,
+            teacher_status=teacher_status
         )
         
         return Response({'message' : 'course created successfully', 'course_id': course.course_id}, status=status.HTTP_201_CREATED)
 
 
+from rest_framework import generics, status
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
+
+from . import models, serializers
+
+
+class TeacherCourseDetailAPIView(generics.RetrieveUpdateAPIView):
+    serializer_class = serializers.CourseSerializer
+    permission_classes = [AllowAny]
+    queryset = models.Course.objects.all()
+    lookup_field = 'course_id'
+
+    def partial_update(self, request, *args, **kwargs):
+        teacher_id = self.kwargs.get('teacher_id')
+        course_id = self.kwargs.get('course_id')
+
+        course = models.Course.objects.filter(course_id=course_id, teacher__id=teacher_id).first()
+        if not course:
+            return Response({'message': 'Course not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Extract data from request
+        title = request.data.get('title', course.title)
+        description = request.data.get('description', course.description)
+        level = request.data.get('level', course.level)
+        language = request.data.get('language', course.language)
+        price = request.data.get('price', course.price)
+        teacher_status = request.data.get('teacher_status', course.teacher_status)
+
+        image = request.FILES.get('image', None)
+        file = request.FILES.get('file', None)
+
+        category_id = request.data.get('category')
+        category = course.category
+        if category_id:
+            category = models.Category.objects.filter(slug=category_id).first()
+            if not category:
+                return Response({'message': 'Invalid category'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Update fields
+        course.title = title
+        course.description = description
+        course.level = level
+        course.language = language
+        course.price = price
+        course.teacher_status = teacher_status
+        course.category = category
+
+        if image:
+            course.image = image
+        if file:
+            course.file = file
+
+        course.save()
+
+        return Response({'message': 'Course updated successfully'}, status=status.HTTP_200_OK)
+
+class TeacherCourseDeleteAPIView(generics.DestroyAPIView):
+    serializer_class = serializers.CourseSerializer
+    permission_classes = [AllowAny]
+    queryset = models.Course.objects.all()
+    lookup_field = 'course_id'
+        
+class CourseVariantCreateAPIView(generics.CreateAPIView):
+    serializer_class = serializers.VariantSerializer
+    permission_classes = [AllowAny]
+
+    def create(self, request, *args, **kwargs):
+        teacher_id = self.kwargs.get('teacher_id')
+        course_id = self.kwargs.get('course_id')
+        title = request.data.get('title')
+
+        if not title:
+            return Response({'message': 'title is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        course = models.Course.objects.filter(teacher__id=teacher_id, course_id=course_id).first()
+        if not course:
+            return Response({'message': 'Course Not Found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        variant = models.Variant.objects.create(course=course, title=title)
+        serializer = self.get_serializer(variant, many=False)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class CourseVariantDeleteAPIView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = serializers.VariantSerializer
+    permission_classes = [AllowAny]
+    queryset = models.Variant.objects.all()
+    lookup_field = 'variant_id'
+
+
+class CourseVariantItemCreateAPIView(generics.CreateAPIView):
+    serializer_class = serializers.VariantItemSerializer
+    permission_classes = [AllowAny]
+
+    def create(self, request, *args, **kwargs):
+        teacher_id = self.kwargs.get('teacher_id')
+        course_id = self.kwargs.get('course_id')
+        variant_id = self.kwargs.get('variant_id')
+        title = request.data.get('title')
+
+        if not title:
+            return Response({'message': 'title is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        variant = models.Variant.objects.filter(variant_id=variant_id).first()
+        if not variant:
+            return Response({'message': 'Variant Not Found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        var_item = models.VariantItem.objects.create(variant=variant, title=title)
+        serializer = self.get_serializer(var_item, many=False)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class CourseVariantItemDeleteAPIView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = serializers.VariantItemSerializer
+    permission_classes = [AllowAny]
+    queryset = models.VariantItem.objects.all()
+    lookup_field = 'variant_item_id'
         
 
-         
-
-
-
-        
-
-class FileUploadAPIView(APIView):
-    def post(self, request):
-        uploaded_file = request.FILES.get("file")
-        if not uploaded_file:
-            return Response({"message": "No file uploaded"}, status=status.HTTP_400_BAD_REQUEST)
-
-        file_name = default_storage.save(uploaded_file.name, uploaded_file)
-        file_url = default_storage.url(file_name)
-        return Response({"url": request.build_absolute_uri(file_url)}, status=status.HTTP_200_OK)
 
 
 

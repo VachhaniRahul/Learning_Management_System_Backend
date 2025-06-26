@@ -64,7 +64,6 @@ urlpatterns = [
 
     # TEACHER URLS
     path('teacher/details/<str:id>/', views.TeacherDetailsAPIView.as_view()),
-    path('teacher/courses/<str:teacher_id>/', views.TeacherCourseWithCourseIdAPIView.as_view()),
     path('teacher/summary/<str:teacher_id>/', views.TeacherSummaryAPIView.as_view()),
     path('teacher/course-list/<str:teacher_id>/', views.TeacherCourseListAPIView.as_view()),
     path('teacher/review-list/<str:teacher_id>/', views.TeacherReviewListAPIView.as_view()),
@@ -79,11 +78,20 @@ urlpatterns = [
     path('teacher/notification-list/<str:teacher_id>/', views.TeacherNotificationListAPIView.as_view()),
     path('teacher/notification-detial/<str:teacher_id>/<str:notification_id>/', views.TeacherNotificationDetailAPIView.as_view()),
     path('teacher/course-create/<str:teacher_id>/', views.CourseCreateAPIView.as_view()),
+    path('teacher/course-delete/<str:course_id>/', views.TeacherCourseDeleteAPIView.as_view()),
+    path('teacher/course-detail/<str:course_id>/', views.TeacherCourseDetailAPIView.as_view()),
+    path('teacher/course-details-update/<str:teacher_id>/<str:course_id>/', views.TeacherCourseDetailAPIView.as_view()),
+    path('teacher/course-variant-create/<str:teacher_id>/<str:course_id>/', views.CourseVariantCreateAPIView.as_view()),
+    path('teacher/course-variant-delete/<str:teacher_id>/<str:course_id>/<str:variant_id>/', views.CourseVariantDeleteAPIView.as_view()),
+    path('teacher/course-variant-item-create/<str:teacher_id>/<str:course_id>/<str:variant_id>/', views.CourseVariantItemCreateAPIView.as_view()),
+    path('teacher/course-variant-item-delete/<str:teacher_id>/<str:course_id>/<str:variant_item_id>/', views.CourseVariantItemDeleteAPIView.as_view()),
     
 
 
     # EXTRA URLS
     path('user/enrollment-course-id/<str:user_id>/', views.StudentEnrollmentAndCourseIDAPIView.as_view()),
-    path('file-upload/', views.FileUploadAPIView.as_view())
+    path('teacher/courses/<str:teacher_id>/', views.TeacherCourseWithCourseIdAPIView.as_view()),
+    path('lms/details/', views.LSMDetails.as_view())
+  
 
 ]
