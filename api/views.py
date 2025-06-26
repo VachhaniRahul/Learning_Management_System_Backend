@@ -6,6 +6,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.exceptions import NotFound
 
+import sys
+print("Python version:", sys.version)
+
+
 from decimal import Decimal
 from django.conf import settings
 from django.shortcuts import redirect
