@@ -37,7 +37,7 @@ ALLOWED_HOSTS = ['learning-management-system-backend-jfj5.onrender.com']
 # Application definition
 
 INSTALLED_APPS = [
-    'jazzmin',
+    # 'jazzmin',
 
     'django.contrib.admin',
     'django.contrib.auth',
